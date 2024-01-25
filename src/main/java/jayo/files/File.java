@@ -5,8 +5,11 @@
 
 package jayo.files;
 
+import jayo.ByteString;
 import jayo.RawSink;
 import jayo.RawSource;
+import jayo.crypto.Digest;
+import jayo.crypto.Hmac;
 import jayo.exceptions.JayoException;
 import jayo.exceptions.JayoFileNotFoundException;
 import jayo.external.NonNegative;
@@ -55,6 +58,19 @@ public sealed interface File permits RealFile {
      * @return the {@code path} of this file.
      */
     @NonNull Path getPath();
+
+    /**
+     * @param digest the chosen message digest algorithm to use for hashing.
+     * @return the hash of this File.
+     */
+    @NonNull ByteString hash(final @NonNull Digest digest);
+
+    /**
+     * @param hMac the chosen "Message Authentication Code" (MAC) algorithm to use.
+     * @param key the key to use for this MAC operation.
+     * @return the MAC result of this File.
+     */
+    @NonNull ByteString hmac(final @NonNull Hmac hMac, final @NonNull ByteString key);
 
     /**
      * Atomically moves or renames this file to {@code destination}, overriding {@code destination} if it already

@@ -5,9 +5,12 @@
 
 package jayo.files.internal;
 
+import jayo.ByteString;
 import jayo.Jayo;
 import jayo.RawSink;
 import jayo.RawSource;
+import jayo.crypto.Digest;
+import jayo.crypto.Hmac;
 import jayo.exceptions.JayoException;
 import jayo.exceptions.JayoFileNotFoundException;
 import jayo.external.NonNegative;
@@ -77,12 +80,25 @@ public final class RealFile implements File {
         }
     }
 
-    // shared with Directory
-
     @Override
     public @NonNull Path getPath() {
         return path;
     }
+
+    @Override
+    public @NonNull ByteString hash(@NonNull Digest digest) {
+        Objects.requireNonNull(digest);
+        return Jayo.hash(source(), digest);
+    }
+
+    @Override
+    public @NonNull ByteString hmac(@NonNull Hmac hMac, @NonNull ByteString key) {
+        Objects.requireNonNull(hMac);
+        Objects.requireNonNull(key);
+        return Jayo.hmac(source(), hMac, key);
+    }
+
+    // shared with Directory
 
     @Override
     public void atomicMove(final @NonNull Path destination) {
