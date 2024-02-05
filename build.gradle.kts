@@ -135,8 +135,8 @@ publishing {
             
             pom {
                 name.set(project.name)
-                description.set("Jayo is a synchronous I/O library for the JVM")
-                url.set("https://github.com/jayo-projects/jayo")
+                description.set("Jayo Files is a file library based on Jayo for the JVM")
+                url.set("https://github.com/jayo-projects/jayo-files")
 
                 licenses {
                     license {
@@ -153,9 +153,9 @@ publishing {
                 }
 
                 scm {
-                    connection.set("scm:git:https://github.com/jayo-projects/jayo")
-                    developerConnection.set("scm:git:git://github.com/jayo-projects/jayo.git")
-                    url.set("https://github.com/jayo-projects/jayo.git")
+                    connection.set("scm:git:https://github.com/jayo-projects/jayo-files")
+                    developerConnection.set("scm:git:git://github.com/jayo-projects/jayo-files.git")
+                    url.set("https://github.com/jayo-projects/jayo-files.git")
                 }
             }
         }
