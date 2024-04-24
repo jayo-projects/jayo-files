@@ -13,14 +13,14 @@ import java.nio.file.Path
 /**
  * @return a `FileBuilder` that will allow to create or open the file this [Path] targets.
  */
-public fun Path.buildFile(): File.FileBuilder = File.Builder().of(this)
+public fun Path.buildFile(): File.FileBuilder = File.from(this)
 
 /**
  * @return a `FileBuilder` that will allow to create or open the file this [java.io.File] targets.
  */
-public fun java.io.File.buildFile(): File.FileBuilder = File.Builder().of(this)
+public fun java.io.File.buildFile(): File.FileBuilder = File.from(this)
 
 /**
  * @return a `FileBuilder` that will allow to create or open the file this [URI] targets.
  */
-public fun URI.buildFile(): File.FileBuilder = File.Builder().of(this)
+public fun URI.buildFile(): File.FileBuilder = File.from(this)

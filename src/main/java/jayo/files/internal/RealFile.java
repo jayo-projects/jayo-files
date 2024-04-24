@@ -15,10 +15,12 @@ import jayo.exceptions.JayoException;
 import jayo.exceptions.JayoFileNotFoundException;
 import jayo.external.NonNegative;
 import jayo.files.File;
+import jayo.files.FileMetadata;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -86,6 +88,24 @@ public final class RealFile implements File {
     }
 
     @Override
+    public @NonNull FileMetadata getMetadata() {
+        if (!Files.exists(path)) {
+            throw new JayoFileNotFoundException("file does not exist anymore");
+        }
+        try {
+            final var attributes = Files.readAttributes(
+                    path,
+                    BasicFileAttributes.class,
+                    LinkOption.NOFOLLOW_LINKS
+            );
+            final var symlinkTarget = (attributes.isSymbolicLink()) ? Files.readSymbolicLink(path) : null;
+            return new RealFileMetadata(attributes, symlinkTarget);
+        } catch (IOException e) {
+            throw JayoException.buildJayoException(e);
+        }
+    }
+
+    @Override
     public @NonNull ByteString hash(@NonNull Digest digest) {
         Objects.requireNonNull(digest);
         return Jayo.hash(source(), digest);
@@ -127,4 +147,52 @@ public final class RealFile implements File {
 //    public boolean isAbsolute() {
 //        return path.isAbsolute();
 //    }
+
+    public static final class FileBuilder implements File.FileBuilder {
+        private final @NonNull Path path;
+
+        public FileBuilder(final @NonNull Path path) {
+            this.path = Objects.requireNonNull(path);
+        }
+
+        @Override
+        public @NonNull File open() {
+            return checkAndBuildFile(path);
+        }
+
+        @Override
+        public @NonNull File create() {
+            try {
+                return checkAndBuildFile(Files.createFile(path));
+            } catch (IOException e) {
+                throw JayoException.buildJayoException(e);
+            }
+        }
+
+        @Override
+        public @NonNull File createIfNotExists() {
+            if (Files.exists(path)) {
+                return checkAndBuildFile(path);
+            }
+            try {
+                return checkAndBuildFile(Files.createFile(path));
+            } catch (IOException e) {
+                throw JayoException.buildJayoException(e);
+            }
+        }
+
+        private @NonNull File checkAndBuildFile(final @NonNull Path path) {
+            Objects.requireNonNull(path);
+            if (!Files.exists(path)) {
+                throw new JayoFileNotFoundException("Path does not exist: " + path);
+            }
+            if (Files.isDirectory(path)) {
+                throw new IllegalArgumentException("A Jayo's file cannot be a directory. Use `Directory` instead.");
+            }
+            if (path.getFileName() == null) {
+                throw new IllegalArgumentException("Jayo prevent zero element files, meaning with no file name.");
+            }
+            return new RealFile(path);
+        }
+    }
 }

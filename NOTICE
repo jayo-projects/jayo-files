@@ -1,0 +1,6 @@
+Jayo HTTP modules
+Copyright (c) 2024-present, pull-vert and Jayo contributors.
+
+Some parts of Jayo Files modules are copied from, derived from, or inspired by Okio (https://github.com/square/okio)
+Copyright (C) 2013 Square, Inc.
+Licensed under the Apache License, Version 2.0 (the "License");
