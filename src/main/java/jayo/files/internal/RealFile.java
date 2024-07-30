@@ -7,8 +7,8 @@ package jayo.files.internal;
 
 import jayo.ByteString;
 import jayo.Jayo;
-import jayo.RawSink;
-import jayo.RawSource;
+import jayo.RawWriter;
+import jayo.RawReader;
 import jayo.crypto.Digest;
 import jayo.crypto.Hmac;
 import jayo.exceptions.JayoException;
@@ -37,7 +37,7 @@ public final class RealFile implements File {
     }
 
     @Override
-    public @NonNull RawSink sink(final @NonNull OpenOption @NonNull ... options) {
+    public @NonNull RawWriter writer(final @NonNull OpenOption @NonNull ... options) {
         if (!Files.exists(path)) {
             throw new JayoFileNotFoundException("file does not exist anymore");
         }
@@ -50,15 +50,15 @@ public final class RealFile implements File {
             }
             optionsSet.add(option);
         }
-        return Jayo.sink(path, optionsSet.toArray(new OpenOption[0]));
+        return Jayo.writer(path, optionsSet.toArray(new OpenOption[0]));
     }
 
     @Override
-    public @NonNull RawSource source() {
+    public @NonNull RawReader reader() {
         if (!Files.exists(path)) {
             throw new JayoFileNotFoundException("file does not exist anymore");
         }
-        return Jayo.source(path);
+        return Jayo.reader(path);
     }
 
     @Override
@@ -108,14 +108,14 @@ public final class RealFile implements File {
     @Override
     public @NonNull ByteString hash(@NonNull Digest digest) {
         Objects.requireNonNull(digest);
-        return Jayo.hash(source(), digest);
+        return Jayo.hash(reader(), digest);
     }
 
     @Override
     public @NonNull ByteString hmac(@NonNull Hmac hMac, @NonNull ByteString key) {
         Objects.requireNonNull(hMac);
         Objects.requireNonNull(key);
-        return Jayo.hmac(source(), hMac, key);
+        return Jayo.hmac(reader(), hMac, key);
     }
 
     // shared with Directory

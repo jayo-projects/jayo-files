@@ -6,8 +6,8 @@
 package jayo.files;
 
 import jayo.ByteString;
-import jayo.RawSink;
-import jayo.RawSource;
+import jayo.RawWriter;
+import jayo.RawReader;
 import jayo.crypto.Digest;
 import jayo.crypto.Hmac;
 import jayo.exceptions.JayoException;
@@ -31,14 +31,14 @@ public sealed interface File permits RealFile {
      * @throws JayoFileNotFoundException if the file does not exist anymore.
      */
     @NonNull
-    RawSink sink(final @NonNull OpenOption @NonNull ... options);
+    RawWriter writer(final @NonNull OpenOption @NonNull ... options);
 
     /**
      * @return a raw source that reads from this file.
      * @throws JayoFileNotFoundException if the file does not exist anymore.
      */
     @NonNull
-    RawSource source();
+    RawReader reader();
 
     /**
      * In general, one may expect that for a path like {@code Path.of("home", "Downloads", "file.txt")} the name is

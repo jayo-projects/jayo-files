@@ -1,7 +1,9 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode.Strict
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0
 import java.nio.charset.StandardCharsets
+import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION as KOTLIN_VERSION
 
 println("Using Gradle version: ${gradle.gradleVersion}")
@@ -9,14 +11,37 @@ println("Using Kotlin compiler version: $KOTLIN_VERSION")
 println("Using Java compiler version: ${JavaVersion.current()}")
 
 plugins {
-    id("jayo.build.optional-dependencies")
-    kotlin("jvm")
-    id("org.jetbrains.dokka")
-    `java-library`
     `maven-publish`
     signing
-    id("org.jetbrains.kotlinx.kover")
-    id("net.researchgate.release")
+    alias(libs.plugins.release)
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.kover)
+    id("jayo.build.optional-dependencies")
+}
+
+val versionCatalog: VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+fun catalogVersion(lib: String) =
+    versionCatalog.findVersion(lib).getOrNull()?.requiredVersion
+        ?: throw GradleException("Version '$lib' is not specified in the toml version catalog")
+
+val javaVersion = catalogVersion("java").toInt()
+
+kotlin {
+    compilerOptions {
+        languageVersion.set(KOTLIN_2_0)
+        apiVersion.set(KOTLIN_2_0)
+        javaParameters = true
+        allWarningsAsErrors = true
+        explicitApi = Strict
+        freeCompilerArgs.addAll(
+            "-Xjvm-default=all",
+            "-Xnullability-annotations=@org.jspecify.annotations:strict" // not really sure if this helps ;)
+        )
+    }
+
+    jvmToolchain(javaVersion)
 }
 
 repositories {
@@ -24,32 +49,30 @@ repositories {
 }
 
 dependencies {
-    api("dev.jayo:jayo:${property("jayoVersion")}")
+    api("dev.jayo:jayo:${catalogVersion("jayo")}")
 
-    compileOnly("org.jspecify:jspecify:${property("jspecifyVersion")}")
+    compileOnly("org.jspecify:jspecify:${catalogVersion("jspecify")}")
 
     optional("org.jetbrains.kotlin:kotlin-stdlib")
-    
-    testImplementation(platform("org.junit:junit-bom:${property("junitVersion")}"))
-    testImplementation("org.assertj:assertj-core:${property("assertjVersion")}")
+
+    testImplementation(platform("org.junit:junit-bom:${catalogVersion("junit")}"))
+    testImplementation("org.assertj:assertj-core:${catalogVersion("assertj")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-    testRuntimeOnly("org.slf4j:slf4j-simple:${property("slf4jVersion")}")
+    testRuntimeOnly("org.slf4j:slf4j-simple:${catalogVersion("slf4j")}")
+    testRuntimeOnly("org.slf4j:slf4j-jdk-platform-logging:${catalogVersion("slf4j")}")
 }
 
-kotlin {
-    explicitApi()
-    jvmToolchain(21)
-}
-
-koverReport {
-    defaults {
-        verify {
-            onCheck = true
-            rule {
-                bound {
-                    minValue = 0
+kover {
+    reports {
+        total {
+            verify {
+                onCheck = true
+                rule {
+                    bound {
+                        minValue = 0
+                    }
                 }
             }
         }
@@ -59,7 +82,7 @@ koverReport {
 tasks {
     withType<JavaCompile> {
         options.encoding = StandardCharsets.UTF_8.toString()
-        options.release = 21
+        options.release = javaVersion
 
         // replace '-' with '.' to match JPMS jigsaw module name
         val jpmsName = project.name.replace('-', '.')
@@ -71,19 +94,6 @@ tasks {
                 "$jpmsName=${sourceSets.main.get().output.asPath}",
             )
         )
-    }
-
-    withType<KotlinCompile> {
-        kotlinOptions {
-            languageVersion = "1.8" // switch to "2.0" with K2 compiler when stable
-            apiVersion = "1.8" // switch to "2.0" with K2 compiler when stable
-            javaParameters = true
-            allWarningsAsErrors = true
-            freeCompilerArgs += arrayOf(
-                "-Xjvm-default=all",
-                "-Xnullability-annotations=@org.jspecify.annotations:strict" // not really sure if this helps ;)
-            )
-        }
     }
 
     withType<Jar> {
@@ -170,6 +180,6 @@ signing {
 // when version changes :
 // -> execute ./gradlew wrapper, then remove .gradle directory, then execute ./gradlew wrapper again
 tasks.wrapper {
-    gradleVersion = "8.5"
+    gradleVersion = "8.9"
     distributionType = Wrapper.DistributionType.ALL
 }
